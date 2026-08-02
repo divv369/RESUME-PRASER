@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Match Studio</title>
+    <meta name="description" content="AI-powered resume analysis platform for modern recruiting teams." />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050816;
+        --bg-soft: rgba(255,255,255,0.06);
+        --border: rgba(255,255,255,0.12);
+        --text: #f7f9ff;
+        --muted: #8ea3c3;
+        --accent: #5d8cff;
+        --accent-2: #7c5cff;
+        --good: #2fd18b;
+        --warn: #ffb84d;
+        --bad: #ff6b6b;
+        --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(93, 140, 255, 0.22), transparent 25%),
+          radial-gradient(circle at top right, rgba(124, 92, 255, 0.2), transparent 30%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      button, input, textarea, select { font: inherit; }
+
+      .container { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; }
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(16px);
+        background: rgba(5, 8, 22, 0.7);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 0;
+      }
+      .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; letter-spacing: 0.02em; }
+      .brand-badge {
+        width: 2.25rem; height: 2.25rem; border-radius: 0.9rem; display: grid; place-items: center;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 8px 24px rgba(93, 140, 255, 0.35);
+      }
+      .nav-links { display: flex; gap: 1.4rem; color: var(--muted); }
+      .nav-links a:hover { color: white; }
+      .mobile-toggle { display: none; }
+
+      .hero {
+        padding: 5rem 0 3rem;
+      }
+      .hero-grid {
+        display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 2rem; align-items: center;
+      }
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.8rem; border-radius: 999px; border: 1px solid rgba(93,140,255,0.3); background: rgba(93,140,255,0.14); color: #b8ccff; font-size: 0.9rem; margin-bottom: 1rem;
+      }
+      .hero h1 { font-size: clamp(2.4rem, 4.1vw, 4.3rem); line-height: 1.05; margin: 0 0 1rem; letter-spacing: -0.03em; }
+      .hero p { font-size: 1.06rem; color: var(--muted); max-width: 640px; }
+      .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.8rem; }
+      .btn { border: 0; border-radius: 999px; padding: 0.95rem 1.2rem; font-weight: 600; cursor: pointer; transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+      .btn:hover { transform: translateY(-2px); }
+      .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; box-shadow: 0 12px 30px rgba(93, 140, 255, 0.28); }
+      .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border); }
+      .hero-stats { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 1.4rem; }
+      .stat-pill { padding: 0.65rem 0.8rem; border-radius: 999px; background: rgba(255,255,255,0.06); color: #dce7ff; border: 1px solid var(--border); font-size: 0.95rem; }
+      .hero-card {
+        padding: 1.4rem; border-radius: 1.8rem; background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06)); border: 1px solid var(--border); box-shadow: var(--shadow); position: relative; overflow: hidden;
+      }
+      .hero-card::before {
+        content: ""; position: absolute; inset: -30% -10% auto auto; width: 240px; height: 240px; background: radial-gradient(circle, rgba(93,140,255,0.5), transparent 70%); filter: blur(30px);
+      }
+      .orb { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.16); animation: float 6s ease-in-out infinite; }
+      .orb.one { width: 88px; height: 88px; top: 12%; left: 8%; }
+      .orb.two { width: 56px; height: 56px; bottom: 14%; right: 8%; animation-delay: 1.2s; }
+      .hero-visual { padding: 1rem; display: grid; gap: 1rem; }
+      .visual-panel {
+        border-radius: 1.2rem; background: rgba(4, 10, 27, 0.78); border: 1px solid rgba(255,255,255,0.08); padding: 1rem;
+      }
+      .visual-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+      .bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.35rem; }
+      .bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: inherit; }
+      .chip-list { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+      .chip { padding: 0.35rem 0.6rem; border-radius: 999px; background: rgba(255,255,255,0.06); color: #dce7ff; font-size: 0.85rem; }
+      .section { padding: 2.2rem 0 3rem; }
+      .section-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 1.2rem; gap: 1rem; }
+      .section-header h2 { margin: 0; font-size: 1.35rem; }
+      .section-header p { margin: 0; color: var(--muted); }
+      .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+      .mode-card {
+        padding: 1.6rem; border-radius: 1.4rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border); box-shadow: var(--shadow); transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+      .mode-card:hover { transform: translateY(-6px); border-color: rgba(93,140,255,0.5); background: rgba(255,255,255,0.09); }
+      .mode-card.selected { border-color: rgba(93,140,255,0.75); box-shadow: 0 16px 38px rgba(93,140,255,0.25); }
+      .icon-bubble { width: 3rem; height: 3rem; border-radius: 1rem; display: grid; place-items: center; background: linear-gradient(135deg, rgba(93,140,255,0.25), rgba(124,92,255,0.25)); margin-bottom: 1rem; }
+      .mode-card h3 { margin: 0 0 0.45rem; font-size: 1.15rem; }
+      .mode-card p { color: var(--muted); margin: 0 0 1rem; }
+      .card-actions { display: flex; justify-content: flex-start; }
+      .workflow-card {
+        padding: 1.4rem; border-radius: 1.4rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border); box-shadow: var(--shadow); margin-top: 1rem;
+      }
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .field { display: grid; gap: 0.45rem; margin-bottom: 0.95rem; }
+      label { color: #dce7ff; font-weight: 600; }
+      input[type="text"], input[type="file"], textarea, select {
+        width: 100%; border-radius: 0.95rem; border: 1px solid rgba(255,255,255,0.12); background: rgba(4,10,27,0.7); color: white; padding: 0.9rem 1rem;
+      }
+      textarea { min-height: 180px; resize: vertical; }
+      .upload-area {
+        border: 1px dashed rgba(93,140,255,0.45); border-radius: 1.15rem; padding: 1.2rem; text-align: center; background: rgba(93,140,255,0.08); cursor: pointer; transition: border-color 160ms ease, transform 160ms ease;
+      }
+      .upload-area.dragover { border-color: #7ce2ff; transform: scale(1.01); }
+      .upload-area strong { display: block; margin-bottom: 0.25rem; }
+      .muted { color: var(--muted); }
+      .radio-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+      .radio-row label { display: inline-flex; gap: 0.45rem; align-items: center; font-weight: 500; color: var(--muted); }
+      .result-shell { display: none; margin-top: 1.4rem; }
+      .loader {
+        display: none; min-height: 220px; border-radius: 1.3rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 1.4rem; box-shadow: var(--shadow); align-items: center; justify-content: center;
+      }
+      .loader.active { display: flex; }
+      .spinner {
+        width: 54px; height: 54px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.16); border-top-color: var(--accent); animation: spin 1s linear infinite; margin-bottom: 1rem;
+      }
+      .loader-body { display: grid; place-items: center; }
+      .steps { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; margin-top: 0.8rem; }
+      .step-pill { padding: 0.4rem 0.7rem; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--muted); }
+      .step-pill.active { color: white; background: rgba(93,140,255,0.2); border: 1px solid rgba(93,140,255,0.3); }
+      .dashboard-grid { display: grid; gap: 1rem; }
+      .dashboard-card {
+        padding: 1.25rem; border-radius: 1.2rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border); box-shadow: var(--shadow);
+      }
+      .dashboard-card h3 { margin-top: 0; margin-bottom: 0.55rem; }
+      .score-ring {
+        width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--accent) calc(var(--score) * 1%), rgba(255,255,255,0.1) 0); margin: 0.65rem auto 0.4rem;
+      }
+      .score-ring span { display: grid; place-items: center; width: 112px; height: 112px; border-radius: 50%; background: #050816; font-size: 1.7rem; font-weight: 700; }
+      .score-meta { text-align: center; color: var(--muted); }
+      .metric-row { display: flex; justify-content: space-between; gap: 0.8rem; margin-top: 0.6rem; color: #dce7ff; }
+      .pill-list { display: flex; gap: 0.55rem; flex-wrap: wrap; margin-top: 0.55rem; }
+      .pill { padding: 0.35rem 0.6rem; border-radius: 999px; background: rgba(255,255,255,0.08); font-size: 0.9rem; }
+      .progress-bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.35rem; }
+      .progress-bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; min-width: 820px; }
+      th, td { padding: 0.85rem 0.8rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      th { font-size: 0.9rem; color: #dce7ff; }
+      .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background: rgba(93,140,255,0.2); color: #b9ccff; }
+      .actions-row { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1rem; }
+      .inline-link { color: #8cb4ff; }
+      .error-card { display: none; padding: 1rem 1.2rem; border-radius: 1rem; background: rgba(255,107,107,0.1); color: #ffb8b8; border: 1px solid rgba(255,107,107,0.24); margin-top: 1rem; }
+      .error-card.active { display: block; }
+      .footer { padding: 3rem 0 2.5rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 2.5rem; }
+      .footer-links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+      @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (max-width: 860px) {
+        .hero-grid, .grid-2, .mode-grid { grid-template-columns: 1fr; }
+        .nav-links { display: none; }
+        .mobile-toggle { display: inline-flex; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="container nav-inner">
+        <a class="brand" href="#home">
+          <span class="brand-badge">✦</span>
+          <span>Resume Match Studio</span>
+        </a>
+        <div class="nav-links">
+          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#workflow">How it Works</a>
+          <a href="#about">About</a>
+          <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+        <button class="btn btn-secondary mobile-toggle" type="button" aria-label="Toggle navigation">☰</button>
+      </div>
+    </nav>
+
+    <main id="home">
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="eyebrow">⚡ AI-assisted recruiting intelligence</div>
+            <h1>Find better-fit candidates with a premium analysis experience.</h1>
+            <p>Resume Match Studio turns every PDF into a clear hiring signal. Upload a single resume or rank an entire batch of applicants in minutes with a polished, recruiter-ready workflow.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#workflow">Start analyzing</a>
+              <a class="btn btn-secondary" href="#features">Explore features</a>
+            </div>
+            <div class="hero-stats" aria-label="Platform highlights">
+              <span class="stat-pill">📄 PDF upload</span>
+              <span class="stat-pill">🧠 AI scoring</span>
+              <span class="stat-pill">📊 rank candidates</span>
+            </div>
+          </div>
+          <div class="hero-card" aria-hidden="true">
+            <div class="orb one"></div>
+            <div class="orb two"></div>
+            <div class="hero-visual">
+              <div class="visual-panel">
+                <div class="visual-row">
+                  <strong>Candidate Fit</strong>
+                  <span>92%</span>
+                </div>
+                <div class="bar"><span style="width: 92%"></span></div>
+              </div>
+              <div class="visual-panel">
+                <div class="visual-row">
+                  <strong>Skill Coverage</strong>
+                  <span>86%</span>
+                </div>
+                <div class="bar"><span style="width: 86%"></span></div>
+              </div>
+              <div class="visual-panel">
+                <div class="chip-list">
+                  <span class="chip">Python</span>
+                  <span class="chip">AWS</span>
+                  <span class="chip">SQL</span>
+                  <span class="chip">FastAPI</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="container">
+          <div class="section-header">
+            <div>
+              <h2>Choose your analysis mode</h2>
+              <p>Select the workflow that fits your hiring motion.</p>
+            </div>
+          </div>
+          <div class="mode-grid">
+            <article class="mode-card selected" data-mode="single" tabindex="0" role="button" aria-label="Start single resume analysis">
+              <div class="icon-bubble">🧾</div>
+              <h3>Single Resume Analysis</h3>
+              <p>Analyze one resume against a role, uncover fit signals, and receive an executive-ready recommendation.</p>
+              <div class="card-actions">
+                <button class="btn btn-primary" type="button">Start Single Analysis</button>
+              </div>
+            </article>
+            <article class="mode-card" data-mode="bulk" tabindex="0" role="button" aria-label="Start bulk resume ranking">
+              <div class="icon-bubble">📦</div>
+              <h3>Bulk Resume Ranking</h3>
+              <p>Upload multiple resumes, rank the best candidates, and compare results across the whole pipeline.</p>
+              <div class="card-actions">
+                <button class="btn btn-secondary" type="button">Start Bulk Analysis</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
+        <div class="container">
+          <div class="workflow-card">
+            <div class="section-header">
+              <div>
+                <h2 id="workflow-title">Single Resume Workflow</h2>
+                <p id="workflow-copy">Upload a PDF and compare it against a software engineering role.</p>
+              </div>
+            </div>
+
+            <div id="single-workflow">
+              <div class="grid-2">
+                <div>
+                  <div class="field">
+                    <label for="resume-file">Upload Resume</label>
+                    <div id="dropzone" class="upload-area" role="button" tabindex="0" aria-label="Upload PDF resume">
+                      <strong>Drop your PDF here</strong>
+                      <span class="muted">or browse to select a PDF file</span>
+                      <input id="resume-file" name="file" type="file" accept=".pdf" style="display:none" />
+                    </div>
+                    <div class="muted" id="selected-file-name">No file selected yet.</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="field">
+                    <label for="job-description-choice">Job Description</label>
+                    <div class="radio-row" id="job-description-choice">
+                      <label><input type="radio" name="jd-mode" value="default" checked /> Use Default Job Description</label>
+                      <label><input type="radio" name="jd-mode" value="custom" /> Use Custom Job Description</label>
+                    </div>
+                  </div>
+                  <div class="field" id="custom-jd-field" style="display:none">
+                    <label for="job-description">Custom Job Description</label>
+                    <textarea id="job-description" placeholder="Paste the role description here..."></textarea>
+                  </div>
+                  <div class="field" id="default-jd-preview">
+                    <label>Default Focus</label>
+                    <div class="muted">Software engineering roles with strong Python, AWS, SQL, and cloud-native product experience.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="actions-row">
+                <button class="btn btn-primary" id="analyze-single-btn" type="button">Analyze Resume</button>
+                <button class="btn btn-secondary" type="button" id="clear-single-btn">Reset</button>
+              </div>
+            </div>
+
+            <div id="bulk-workflow" style="display:none;">
+              <div class="field">
+                <label for="bulk-files">Upload Multiple Résumés</label>
+                <div id="bulk-dropzone" class="upload-area" role="button" tabindex="0" aria-label="Upload multiple PDFs">
+                  <strong>Drop multiple PDFs here</strong>
+                  <span class="muted">or browse to select several PDF files</span>
+                  <input id="bulk-files" name="files" type="file" accept=".pdf" multiple style="display:none" />
+                </div>
+                <div class="muted" id="bulk-file-count">No files selected yet.</div>
+              </div>
+              <div class="field">
+                <label for="bulk-job-description">Job Description</label>
+                <textarea id="bulk-job-description" placeholder="Paste a role description for bulk ranking..."></textarea>
+              </div>
+              <div class="actions-row">
+                <button class="btn btn-primary" id="analyze-bulk-btn" type="button">Rank Candidates</button>
+              </div>
+            </div>
+
+            <div class="error-card" id="error-card" role="alert"></div>
+
+            <div class="loader" id="loader" aria-live="polite">
+              <div class="loader-body">
+                <div class="spinner"></div>
+                <div><strong id="loader-title">Reading Resume...</strong></div>
+                <div class="muted" id="loader-copy">Extracting the document into analyzable content.</div>
+                <div class="steps">
+                  <span class="step-pill active">Reading Resume...</span>
+                  <span class="step-pill">Extracting Text...</span>
+                  <span class="step-pill">Analyzing Skills...</span>
+                  <span class="step-pill">Comparing JD...</span>
+                  <span class="step-pill">Generating Report...</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-shell" id="result-shell">
+              <div id="single-result"></div>
+              <div id="bulk-result"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" id="about">
+      <div class="container">
+        <strong>Resume Match Studio</strong>
+        <div class="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">License</a>
+          <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const state = { mode: 'single' };
+      const modeCards = Array.from(document.querySelectorAll('.mode-card'));
+      const singleWorkflow = document.getElementById('single-workflow');
+      const bulkWorkflow = document.getElementById('bulk-workflow');
+      const workflowTitle = document.getElementById('workflow-title');
+      const workflowCopy = document.getElementById('workflow-copy');
+      const errorCard = document.getElementById('error-card');
+      const loader = document.getElementById('loader');
+      const resultShell = document.getElementById('result-shell');
+      const singleResult = document.getElementById('single-result');
+      const bulkResult = document.getElementById('bulk-result');
+      const dropzone = document.getElementById('dropzone');
+      const bulkDropzone = document.getElementById('bulk-dropzone');
+      const fileInput = document.getElementById('resume-file');
+      const bulkInput = document.getElementById('bulk-files');
+      const selectedFileName = document.getElementById('selected-file-name');
+      const bulkFileCount = document.getElementById('bulk-file-count');
+      const customJdField = document.getElementById('custom-jd-field');
+      const defaultJdPreview = document.getElementById('default-jd-preview');
+      const jdModeRadios = Array.from(document.querySelectorAll('input[name="jd-mode"]'));
+      const jobDescription = document.getElementById('job-description');
+      const bulkJobDescription = document.getElementById('bulk-job-description');
+      const loaderTitle = document.getElementById('loader-title');
+      const loaderCopy = document.getElementById('loader-copy');
+      const stepPills = Array.from(document.querySelectorAll('.step-pill'));
+
+      const steps = [
+        'Reading Resume...',
+        'Extracting Text...',
+        'Analyzing Skills...',
+        'Comparing JD...',
+        'Generating Report...'
+      ];
+
+      function setMode(mode) {
+        state.mode = mode;
+        modeCards.forEach((card) => card.classList.toggle('selected', card.dataset.mode === mode));
+        singleWorkflow.style.display = mode === 'single' ? 'block' : 'none';
+        bulkWorkflow.style.display = mode === 'bulk' ? 'block' : 'none';
+        workflowTitle.textContent = mode === 'single' ? 'Single Resume Workflow' : 'Bulk Resume Ranking';
+        workflowCopy.textContent = mode === 'single' ? 'Upload a PDF and compare it against a software engineering role.' : 'Upload multiple resumes and rank the strongest candidates automatically.';
+      }
+
+      modeCards.forEach((card) => {
+        card.addEventListener('click', () => setMode(card.dataset.mode));
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setMode(card.dataset.mode);
+          }
+        });
+      });
+
+      jdModeRadios.forEach((radio) => {
+        radio.addEventListener('change', () => {
+          const custom = radio.value === 'custom';
+          customJdField.style.display = custom ? 'block' : 'none';
+          defaultJdPreview.style.display = custom ? 'none' : 'block';
+        });
+      });
+
+      function showError(message) {
+        errorCard.textContent = message;
+        errorCard.classList.add('active');
+      }
+
+      function clearError() {
+        errorCard.textContent = '';
+        errorCard.classList.remove('active');
+      }
+
+      function showLoader() {
+        clearError();
+        resultShell.style.display = 'none';
+        loader.classList.add('active');
+        let index = 0;
+        const timer = setInterval(() => {
+          if (index >= steps.length) index = 0;
+          loaderTitle.textContent = steps[index];
+          loaderCopy.textContent = index === 0 ? 'Extracting the document into analyzable content.' : 'Continuing the review experience...';
+          stepPills.forEach((pill, idx) => pill.classList.toggle('active', idx === index));
+          index += 1;
+        }, 900);
+        loader.dataset.timer = String(timer);
+      }
+
+      function hideLoader() {
+        loader.classList.remove('active');
+        if (loader.dataset.timer) clearInterval(Number(loader.dataset.timer));
+      }
+
+      function renderScore(score, verdict) {
+        const normalized = Math.max(0, Math.min(100, score));
+        let tone = 'var(--accent)';
+        if (normalized >= 80) tone = '#2fd18b';
+        else if (normalized >= 60) tone = '#ffb84d';
+        else tone = '#ff6b6b';
+        return `
+          <div class="dashboard-card">
+            <h3>Overall Match Score</h3>
+            <div class="score-ring" style="--score:${normalized}; background: conic-gradient(${tone} ${normalized}%, rgba(255,255,255,0.1) 0)">
+              <span>${Math.round(normalized)}%</span>
+            </div>
+            <div class="score-meta">${verdict}</div>
+          </div>
+        `;
+      }
+
+      function renderMetric(label, value) {
+        return `<div class="metric-row"><span>${label}</span><strong>${value}</strong></div>`;
+      }
+
+      function renderPillList(items) {
+        if (!items || !items.length) return '<div class="muted">No data captured.</div>';
+        return `<div class="pill-list">${items.map((item) => `<span class="pill">${item}</span>`).join('')}</div>`;
+      }
+
+      function buildSingleReport(result) {
+        return `
+          <div class="dashboard-grid">
+            ${renderScore(result.match_percentage || 0, result.verdict || 'Needs review')}
+            <div class="dashboard-card">
+              <h3>Resume Summary</h3>
+              <p>${result.summary || 'A structured summary will appear here.'}</p>
+              ${renderMetric('Experience Years', result.experience_years || 'N/A')}
+              ${renderMetric('ATS Readiness', `${result.ats_score || 0}%`)}
+            </div>
+            <div class="dashboard-card">
+              <h3>Strengths</h3>
+              ${renderPillList(result.matched_skills || [])}
+            </div>
+            <div class="dashboard-card">
+              <h3>Missing Skills</h3>
+              ${renderPillList(result.missing_skills || [])}
+            </div>
+            <div class="dashboard-card">
+              <h3>Improvement Suggestions</h3>
+              <ul>${(result.improvement_suggestions || []).map((item) => `<li>${item}</li>`).join('')}</ul>
+            </div>
+            <div class="dashboard-card">
+              <h3>Recruiter Verdict</h3>
+              <p>${result.recruiter_verdict || 'Ready for review.'}</p>
+              <p>${result.final_recommendation || ''}</p>
+            </div>
+            <div class="actions-row">
+              <button class="btn btn-primary" type="button" data-export="json">Download JSON</button>
+              <button class="btn btn-secondary" type="button" data-export="csv">Download CSV</button>
+              <button class="btn btn-secondary" type="button" data-export="pdf">Download PDF</button>
+            </div>
+          </div>
+        `;
+      }
+
+      async function exportReport(format, payload) {
+        const response = await fetch('/api/export-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ format, payload })
+        });
+        if (!response.ok) throw new Error('Export failed');
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `resume-report.${format}`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      singleResult.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-export]');
+        if (!button) return;
+        const format = button.getAttribute('data-export');
+        const payload = window.__latestSingleResult || {};
+        try {
+          await exportReport(format, payload);
+        } catch (error) {
+          showError('Export failed. Please try again.');
+        }
+      });
+
+      async function analyzeSingle() {
+        const file = fileInput.files[0];
+        if (!file) {
+          showError('Please choose a PDF file before analyzing.');
+          return;
+        }
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+          showError('Only PDF files are supported.');
+          return;
+        }
+        const form = new FormData();
+        form.append('file', file);
+        form.append('job_description', jdModeRadios.find((radio) => radio.checked)?.value === 'custom' ? jobDescription.value : '');
+        form.append('use_default_description', String(jdModeRadios.find((radio) => radio.checked)?.value !== 'custom'));
+        showLoader();
+        try {
+          const response = await fetch('/api/analyze-single', { method: 'POST', body: form });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || 'Analysis failed');
+          singleResult.innerHTML = buildSingleReport(payload);
+          window.__latestSingleResult = payload;
+          resultShell.style.display = 'block';
+          singleResult.style.display = 'block';
+          bulkResult.style.display = 'none';
+        } catch (error) {
+          showError(error.message || 'Something went wrong.');
+        } finally {
+          hideLoader();
+        }
+      }
+
+      async function analyzeBulk() {
+        const files = Array.from(bulkInput.files || []);
+        if (!files.length) {
+          showError('Please choose at least one PDF file for bulk analysis.');
+          return;
+        }
+        const form = new FormData();
+        files.forEach((file) => form.append('files', file));
+        form.append('job_description', bulkJobDescription.value || '');
+        form.append('use_default_description', String(!bulkJobDescription.value.trim()));
+        showLoader();
+        try {
+          const response = await fetch('/api/analyze-bulk', { method: 'POST', body: form });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || 'Bulk analysis failed');
+          const rows = payload.results || [];
+          bulkResult.innerHTML = `
+            <div class="dashboard-card">
+              <h3>Top 10 Ranked Candidates</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Rank</th><th>Candidate</th><th>Overall Match %</th><th>Score</th><th>Skills Score</th><th>Experience Score</th><th>Education Score</th><th>Missing Skills</th></tr>
+                  </thead>
+                  <tbody>
+                    ${rows.slice(0, 10).map((row, index) => `
+                      <tr>
+                        <td><span class="rank-badge">${index + 1}</span></td>
+                        <td>${row.candidate_name || `Candidate ${index + 1}`}</td>
+                        <td>${row.match_percentage || 0}%</td>
+                        <td>${row.score || 0}</td>
+                        <td>${row.skills_score || 0}</td>
+                        <td>${row.experience_score || 0}</td>
+                        <td>${row.education_score || 0}</td>
+                        <td>${row.missing_skills_count || 0}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+          resultShell.style.display = 'block';
+          singleResult.style.display = 'none';
+          bulkResult.style.display = 'block';
+        } catch (error) {
+          showError(error.message || 'Something went wrong.');
+        } finally {
+          hideLoader();
+        }
+      }
+
+      document.getElementById('analyze-single-btn').addEventListener('click', analyzeSingle);
+      document.getElementById('analyze-bulk-btn').addEventListener('click', analyzeBulk);
+      document.getElementById('clear-single-btn').addEventListener('click', () => {
+        fileInput.value = '';
+        jobDescription.value = '';
+        selectedFileName.textContent = 'No file selected yet.';
+        document.querySelectorAll('input[name="jd-mode"]')[0].checked = true;
+        customJdField.style.display = 'none';
+        defaultJdPreview.style.display = 'block';
+        singleResult.innerHTML = '';
+        resultShell.style.display = 'none';
+        clearError();
+      });
+
+      fileInput.addEventListener('change', () => {
+        selectedFileName.textContent = fileInput.files[0] ? fileInput.files[0].name : 'No file selected yet.';
+      });
+
+      bulkInput.addEventListener('change', () => {
+        const count = bulkInput.files?.length || 0;
+        bulkFileCount.textContent = count ? `${count} file${count > 1 ? 's' : ''} selected.` : 'No files selected yet.';
+      });
+
+      ['dragenter','dragover'].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.add('dragover');
+        });
+      });
+      ['dragleave','drop'].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.remove('dragover');
+        });
+      });
+      dropzone.addEventListener('drop', (event) => {
+        const [file] = event.dataTransfer.files || [];
+        fileInput.files = event.dataTransfer.files;
+        selectedFileName.textContent = file ? file.name : 'No file selected yet.';
+      });
+      dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fileInput.click(); }
+      });
+
+      ['dragenter','dragover'].forEach((eventName) => {
+        bulkDropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          bulkDropzone.classList.add('dragover');
+        });
+      });
+      ['dragleave','drop'].forEach((eventName) => {
+        bulkDropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          bulkDropzone.classList.remove('dragover');
+        });
+      });
+      bulkDropzone.addEventListener('drop', (event) => {
+        bulkInput.files = event.dataTransfer.files;
+        const count = bulkInput.files?.length || 0;
+        bulkFileCount.textContent = count ? `${count} file${count > 1 ? 's' : ''} selected.` : 'No files selected yet.';
+      });
+      bulkDropzone.addEventListener('click', () => bulkInput.click());
+      bulkDropzone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); bulkInput.click(); }
+      });
+
+      setMode('single');
+    </script>
+  </body>
+</html>
