@@ -4,3 +4,4 @@ pypdf>=6.14.2,<7
 python-dotenv>=1.2.2,<2
 pydantic>=2.13.4,<3
 python-multipart>=0.0.1,<1
+vercel-asgi>=0.1.0
